@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+*.egg-info/
+
+# Archivos de entorno
+.env
+
+# BD y estado
+*.db
+*.sqlite
+data/state/*.json
+
+# Archivos de salida
+# data/raw_users/*.jsonl
+# data/processed_users/*.jsonl
+# data/dlq/*.jsonl

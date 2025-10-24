@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile.extractor
+    volumes:
+      - ./app:/app
+      - ./data:/app/data
+    env_file:
+      - .env
