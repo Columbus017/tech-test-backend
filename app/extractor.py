@@ -7,13 +7,16 @@ import logging
 from datetime import datetime
 from dotenv import load_dotenv
 
+# --- Configuración Inicial ---
 load_dotenv()
 
+# Configuración de Logging
 logging.basicConfig(
   level=logging.INFO,
   format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# Variables de Entorno y Constantes
 API_BASE_URL = os.getenv('API_BASE_URL', 'https://dummyjson.com/users')
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 100))
 SLEEP_INTERVAL = int(os.getenv('SLEEP_INTERVAL_SECONDS', 60))
@@ -22,6 +25,8 @@ REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 MAX_RETRIES = 3
 STATE_FILE_PATH = 'data/state/extractor_state.json'
 OUTPUT_DIR = 'data/raw_users'
+
+# --- Funciones de Estado ---
 
 def load_state():
   try:
@@ -41,6 +46,8 @@ def save_state(skip_value):
       logging.info(f"State saved: 'skip' set to {skip_value}")
   except IOError as e:
     logging.error(f"Critical error! Can't save the state in '{STATE_FILE_PATH}'. Error: {e}")
+
+# --- Lógica Principal del Extractor ---
 
 def fetch_batch(session, skip, limit):
   url = f"{API_BASE_URL}?limit={limit}&skip={skip}"

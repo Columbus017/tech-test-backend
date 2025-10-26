@@ -8,14 +8,17 @@ from datetime import datetime
 from jsonschema import validate, exceptions
 from email_validator import validate_email, EmailNotValidError
 
+# --- Configuración de Logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# --- Variables de Entorno ---
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 LOOKUP_FILE = 'data/lookup/departments.csv'
 PROCESSED_DIR = 'data/processed_users'
 DLQ_DIR = 'data/dlq'
 
+# --- Esquema de Validación ---
 USER_SCHEMA = {
   "type": "object",
   "properties": {
@@ -44,7 +47,9 @@ def load_department_lookup(filepath):
   
 def validate_record(record):
   try:
+    # Validación de Esquema
     validate(instance=record, schema=USER_SCHEMA)
+    # Validación de Email
     validate_email(record['email'], check_deliverability=False)
 
     return True, None
@@ -110,9 +115,9 @@ def main():
     try:
       r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
       r.ping()
-      logging.info("Conexión con Redis establecida.")
+      logging.info("Connection with Redis set.")
     except redis.exceptions.ConnectionError as e:
-      logging.warning(f"No se puede conectar a Redis: {e}. Reintentando en 5s...")
+      logging.warning(f"Cannot connect with Redis: {e}. Retry in 5s...")
       time.sleep(5)
 
   dept_lookup = load_department_lookup(LOOKUP_FILE)

@@ -16,9 +16,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 
+# Base de datos (Sqlite)
 DB_PATH = '/app/database/data.db'
 DB_ENGINE = create_engine(f'sqlite:///{DB_PATH}')
 
+# SFTP config
 SFTP_HOST = os.getenv('SFTP_HOST', 'sftp')
 SFTP_PORT = int(os.getenv('SFTP_PORT', 22))
 SFTP_USER = os.getenv('SFTP_USER', 'sftp_user')
@@ -31,20 +33,15 @@ FILE_TO_TABLE_MAP = {
   'dlq_file': 'invalid_users'
 }
 
-# --- NUEVA FUNCIÓN (MÁS ROBUSTA) ---
 def save_to_database(filepaths):
-  """
-  Guarda los datos en la base de datos en transacciones separadas
-  para máxima robustez.
-  """
-  logging.info("Iniciando guardado en base de datos...")
+  logging.info("Starting saving on database...")
   os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
-  # --- PASO 1: Guardar el resumen de la corrida (Transacción Separada) ---
+  # --- Guardar el resumen de la run ---
   try:
     with DB_ENGINE.connect() as conn:
       with conn.begin():  # Iniciar transacción
-        # 1. Crear la tabla 'header' si no existe
+        # Crear la tabla si no existe
         conn.execute(text("""
           CREATE TABLE IF NOT EXISTS etl_runs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,7 +54,7 @@ def save_to_database(filepaths):
           );
         """))
           
-        # 2. Insertar el registro de esta corrida
+        # Insertar el registro de esta run
         conn.execute(text("""
           INSERT INTO etl_runs (run_timestamp, raw_file, processed_file, dlq_file, valid_count, invalid_count)
           VALUES (:ts, :rf, :pf, :df, :vc, :ic)
@@ -69,33 +66,32 @@ def save_to_database(filepaths):
           "vc": filepaths.get('valid_count'),
           "ic": filepaths.get('invalid_count')
         })
-    logging.info("Registro de 'etl_runs' guardado exitosamente.")
+    logging.info("'etl_runs' record saved successfully.")
   except Exception as e:
-    logging.error(f"Error CRÍTICO guardando en 'etl_runs': {e}")
+    logging.error(f"Critical error saving on 'etl_runs': {e}")
     logging.error(traceback.format_exc())
-    # Si esto falla, no continuamos
     return
 
-  # --- PASO 2: Guardar cada archivo (Transacciones Separadas) ---
+  # --- Guardar cada archivo ---
   for key, table_name in FILE_TO_TABLE_MAP.items():
     filepath = filepaths.get(key)
 
     # --- Validación del archivo ---
     if not filepath:
-        logging.warning(f"No se encontró la llave '{key}' en el mensaje. Saltando.")
+        logging.warning(f"Key '{key}' not found on the message. Skipping.")
         continue
     if not os.path.exists(filepath):
-        logging.warning(f"Archivo no encontrado: {filepath}. Saltando guardado en DB.")
+        logging.warning(f"File not found: {filepath}. Skip saving on DB.")
         continue
     if os.path.getsize(filepath) == 0:
-        logging.info(f"Archivo está vacío: {filepath}. Saltando guardado en DB.")
+        logging.info(f"File empty: {filepath}. Skip saving on DB.")
         continue
 
-    # --- Inicio de la transacción para ESTE archivo ---
+    # --- Inicio de la transacción para este archivo ---
     try:
-      logging.info(f"Cargando {filepath} en tabla '{table_name}'...")
+      logging.info(f"Loading {filepath} on table '{table_name}'...")
       
-      # Leer el .jsonl (ahora es seguro)
+      # Leer el .jsonl
       df = pd.read_json(filepath, lines=True)
 
       # Aplanar tipos complejos
@@ -106,26 +102,22 @@ def save_to_database(filepaths):
       # Añadir columna de inserción
       df['insertion_date'] = datetime.now().isoformat()
       
-      # Cargar a Sqlite (en su propia transacción)
+      # Subir a Sqlite
       with DB_ENGINE.connect() as conn:
         with conn.begin():
           df.to_sql(table_name, con=conn, if_exists='append', index=False)
       
-      logging.info(f"Tabla '{table_name}' guardada exitosamente.")
+      logging.info(f"Table '{table_name}' saved successfully.")
 
     except Exception as e:
-      logging.error(f"Error guardando la tabla '{table_name}' desde {filepath}: {e}")
+      logging.error(f"Error saving table '{table_name}' from {filepath}: {e}")
       logging.error(traceback.format_exc())
-      # Este error se registra, pero el bucle continuará con el siguiente archivo
 
-  logging.info("Ciclo de guardado en base de datos completado.")
+  logging.info("Database save cycle completed.")
 
-
-# --- (El resto de tu archivo: upload_to_sftp y main) ---
-# ... (asegúrate de que el resto del archivo sigue ahí) ...
 
 def upload_to_sftp(filepaths):
-  logging.info("Iniciando subida a SFTP...")
+  logging.info("Starting upload to SFTP...")
   
   sftp = None
   transport = None
@@ -137,19 +129,19 @@ def upload_to_sftp(filepaths):
       transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
       transport.connect(username=SFTP_USER, pkey=private_key)
       sftp = paramiko.SFTPClient.from_transport(transport)
-      logging.info(f"Conectado a SFTP en {SFTP_HOST}:{SFTP_PORT} (Intento {attempt+1})")
+      logging.info(f"Connect to SFTP on {SFTP_HOST}:{SFTP_PORT} (Try {attempt+1})")
       break
     except Exception as e:
-      logging.warning(f"Intento {attempt+1}/{max_retries} fallido. No se pudo conectar a SFTP: {e}. Reintentando en 5s...")
+      logging.warning(f"Try {attempt+1}/{max_retries} failed. Cannot connect to SFTP: {e}. Retry in 5s...")
       if transport:
         transport.close()
       if attempt + 1 == max_retries:
-        logging.error("Todos los intentos de conexión SFTP fallaron. Abortando subida.")
+        logging.error("All SFTP connection attempts failed. Aborting upload.")
         return
       time.sleep(5)
           
   if not sftp:
-    logging.error("Fallo inesperado, la conexión SFTP no está activa.")
+    logging.error("Unexpected fail, connection to SFTP is not active.")
     return
 
   try:
@@ -161,18 +153,18 @@ def upload_to_sftp(filepaths):
     
     for local_path in files_to_upload:
       if not local_path or not os.path.exists(local_path):
-        logging.warning(f"Archivo no encontrado o nulo: {local_path}. Saltando subida a SFTP.")
+        logging.warning(f"File not found or null: {local_path}. Skip upload to SFTP.")
         continue
           
       remote_filename = os.path.basename(local_path)
       remote_path = f"{SFTP_REMOTE_DIR}/{remote_filename}"
-      logging.info(f"Subiendo {local_path} a {remote_path}...")
+      logging.info(f"Uploading {local_path} a {remote_path}...")
       sftp.put(local_path, remote_path)
         
-    logging.info("Subida a SFTP completada.")
+    logging.info("Upload to SFTP complete.")
       
   except Exception as e:
-    logging.error(f"Error durante la subida a SFTP (después de conectar): {e}")
+    logging.error(f"Error during SFTP upload (after connecting): {e}")
   finally:
     if sftp:
       sftp.close()
@@ -188,9 +180,9 @@ def main():
     try:
       r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
       r.ping()
-      logging.info("Conexión con Redis establecida.")
+      logging.info("Connection with Redis set.")
     except redis.exceptions.ConnectionError as e:
-      logging.warning(f"No se puede conectar a Redis: {e}. Reintentando en 5s...")
+      logging.warning(f"Cannot connect with Redis: {e}. Retrying in 5s...")
       time.sleep(5)
 
   while True:
