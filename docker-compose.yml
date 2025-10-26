@@ -1,10 +1,55 @@
 services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    restart: always
+  sftp:
+    platform: linux/amd64 # Set up platform that match with docker
+    image: atmoz/sftp
+    volumes:
+      - ./ssh_keys/sftp_user.pub:/home/sftp_user/.ssh/keys/id_rsa.pub:ro
+      - ./sftp_data:/home/sftp_user/upload
+    command: sftp_user::1001::upload
+    ports:
+      - "2222:22"
   extractor:
     build:
       context: .
-      dockerfile: Dockerfile.extractor
+      dockerfile: Dockerfile
     volumes:
       - ./app:/app
       - ./data:/app/data
     env_file:
       - .env
+    depends_on:
+      - redis
+    command: python extractor.py
+  transformer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+      - ./data:/app/data
+      - ./data/lookup:/app/data/lookup 
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    command: python transformer.py
+  saver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+      - ./data:/app/data
+      - ./database:/app/database
+      - ./ssh_keys/id_rsa:/app/ssh_keys/id_rsa:ro
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - sftp
+    command: python saver.py

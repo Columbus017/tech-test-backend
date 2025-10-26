@@ -12,7 +12,13 @@ env/
 *.sqlite
 data/state/*.json
 
-# Archivos de salida
-# data/raw_users/*.jsonl
-# data/processed_users/*.jsonl
-# data/dlq/*.jsonl
+# --- Datos Generados y Bases de Datos ---
+data/raw_users/
+data/processed_users/
+data/dlq/
+data/state/
+database/
+sftp_data/
+
+# SSH_KEYS
+ssh_keys/

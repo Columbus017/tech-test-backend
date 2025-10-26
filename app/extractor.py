@@ -1,4 +1,5 @@
 import os
+import redis
 import json
 import time
 import requests
@@ -16,6 +17,8 @@ logging.basicConfig(
 API_BASE_URL = os.getenv('API_BASE_URL', 'https://dummyjson.com/users')
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 100))
 SLEEP_INTERVAL = int(os.getenv('SLEEP_INTERVAL_SECONDS', 60))
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 MAX_RETRIES = 3
 STATE_FILE_PATH = 'data/state/extractor_state.json'
 OUTPUT_DIR = 'data/raw_users'
@@ -85,7 +88,7 @@ def run_extraction():
       users = data.get('users', [])
       if total_users == -1:
         total_users = data.get('total', 0)
-        logging.info(f"Total users to extract: {total_users}")
+        logging.info(f"Total de usuarios a extraer: {total_users}")
 
       if not users:
         logging.info("No more users. Pagination completed")
@@ -94,7 +97,7 @@ def run_extraction():
       try:
         with open(output_filename, 'a', encoding='utf-8') as f:
           for user in users:
-            f.write(json.dumps(users) + '\n')
+            f.write(json.dumps(user) + '\n')
       except IOError as e:
         logging.error(f"Error writing in {output_filename}. Aborting. Error: {e}")
         return False
@@ -112,6 +115,21 @@ def run_extraction():
 
   logging.info("Extraction completed successfully. Reset 'skip' to 0 for next day.")
   save_state(0)
+
+  if processed_count_in_run > 0:
+    try:
+      r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+      r.ping()
+
+      message_data = json.dumps({"raw_file": output_filename})
+      r.publish("channel:phase1_complete", message_data)
+
+      logging.info(f"Message published on 'channel:phase1_complete': {output_filename}")
+    except Exception as e:
+      logging.error(f"Error publishing on Redis {e}")
+  else:
+    logging.info("No new records were processed, no publish on Redis.")
+
   return True
 
 def main():

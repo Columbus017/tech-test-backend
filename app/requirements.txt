@@ -1,2 +1,9 @@
 requests
 python-dotenv
+
+redis                  # Para la cola de mensajes
+pandas                 # Para enriquecer datos (leer CSV) y cargar a SQL
+jsonschema             # Para validar la data
+email_validator        # Para validar emails
+sqlalchemy             # Para escribir en la base de datos Sqlite
+paramiko               # Para la conexión SFTP con llave SSH
