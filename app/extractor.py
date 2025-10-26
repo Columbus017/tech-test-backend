@@ -43,7 +43,7 @@ def save_state(skip_value):
     logging.error(f"Critical error! Can't save the state in '{STATE_FILE_PATH}'. Error: {e}")
 
 def fetch_batch(session, skip, limit):
-  url = f"{API_BASE_URL}?limit={limit}&skip{skip}"
+  url = f"{API_BASE_URL}?limit={limit}&skip={skip}"
 
   for attempt in range(MAX_RETRIES):
     try:
@@ -52,7 +52,7 @@ def fetch_batch(session, skip, limit):
       if response.status_code == 200:
         return response.json()
       else:
-        logging.warnign(f"API return status {response.status_code}. Retry {attempt + 1}/{MAX_RETRIES}...")
+        logging.warning(f"API return status {response.status_code}. Retry {attempt + 1}/{MAX_RETRIES}...")
     except requests.exceptions.RequestException as e:
       logging.warning(f"Exception in request: {e}. Retry {attempt + 1}/{MAX_RETRIES}...")
 

@@ -45,7 +45,7 @@ def load_department_lookup(filepath):
 def validate_record(record):
   try:
     validate(instance=record, schema=USER_SCHEMA)
-    validate_email(record['email'])
+    validate_email(record['email'], check_deliverability=False)
 
     return True, None
   

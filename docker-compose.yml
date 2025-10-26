@@ -53,3 +53,19 @@ services:
       - redis
       - sftp
     command: python saver.py
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+      - ./database:/app/database  # Monta la DB para que pueda leerla
+    env_file:
+      - .env
+    ports:
+      # Expone el puerto 8000 del contenedor al puerto 8000 de tu máquina
+      - "8000:8000"
+    depends_on:
+      - saver # No inicies el API hasta que el saver (y la DB) se haya creado
+    # El comando que corre este servicio
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
