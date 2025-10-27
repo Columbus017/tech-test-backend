@@ -19,17 +19,17 @@ This project uses a decoupled microservices architecture orchestrated by Docker 
 ## ETL Pipeline Flow
 
 ```
-(API Externa) -> [Extractor (Fase 1)] --(publica)--> [Redis (Canal: channel:phase1_complete)]
+(External API) -> [Extractor (Phase 1)] --(publishes)--> [Redis (Channel: channel:phase1_complete)]
                                                                 |
                                                                 v
-                                                        [Transformador (Fase 2)] --(publica)--> [Redis (Canal: channel:phase2_complete)]
+                                                        [Transformer (Phase 2)] --(publishes)--> [Redis (Channel: channel:phase2_complete)]
                                                                                                 |
                                                                                                 v
-                                                                                        [Guardador (Fase 3)]
+                                                                                          [Saver (Phase 3)]
                                                                                              /      \
                                                                                             /        \
                                                                                            v          v
-                                                                                     [Sqlite DB]   [Servidor SFTP]
+                                                                                     [Sqlite DB]   [SFTP Server]
 ```
 ### REST API Flow
 
