@@ -1,10 +1,10 @@
-# 🚀 Proyecto Técnico - Backend (ETL Pipeline & API)
+# Proyecto Técnico - Backend (ETL Pipeline & API)
 
 Este proyecto implementa un pipeline ETL (Extracción, Transformación y Carga) completo y una API REST como parte de una prueba técnica.
 
 El pipeline extrae datos de la API [DummyJSON](https://dummyjson.com/users), los transforma, valida y enriquece, y finalmente los carga en una base de datos **Sqlite** y los sube a un servidor **SFTP**. Una **API REST (FastAPI)** expone los datos guardados para ser consumidos por un frontend.
 
-## ✨ Características
+## Características
 
 * **Fase 1 (Extractor):** Script resiliente que extrae usuarios con paginación, reintentos (exponential backoff) y guardado de estado (resumible).
 * **Fase 2 (Transformador):** Servicio independiente que valida esquemas de datos, enriquece los registros y envía los datos inválidos a una "Dead-Letter Queue" (DLQ).
@@ -15,7 +15,7 @@ El pipeline extrae datos de la API [DummyJSON](https://dummyjson.com/users), los
 * **Desacoplamiento con Cola de Mensajes:** Los servicios (Extractor, Transformador, Guardador) están desacoplados usando **Redis Pub/Sub**.
 * **SFTP con Autenticación Segura:** La subida de archivos se realiza a un servidor SFTP usando **autenticación por llave SSH** (sin contraseñas).
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 * **Lenguaje:** Python 3.10
 * **API:** FastAPI
@@ -25,7 +25,7 @@ El pipeline extrae datos de la API [DummyJSON](https://dummyjson.com/users), los
 * **SFTP:** Paramiko (para cliente), `atmoz/sftp` (para servidor)
 * **Contenedores:** Docker & Docker Compose
 
-## 📐 Arquitectura (Diagrama de Componentes)
+## Arquitectura (Diagrama de Componentes)
 
 Este proyecto utiliza una arquitectura de microservicios desacoplados orquestada por Docker Compose.
 
@@ -43,7 +43,7 @@ v v [Sqlite DB] [Servidor SFTP]
 (Usuario) <--> [Frontend (Next.js)] <--> [API REST (FastAPI)] <--> [Sqlite DB]
 ```
 
-## 📋 Prácticas de Programación
+## Prácticas de Programación
 
 * **Variables de Entorno:** Toda la configuración sensible (credenciales, hosts) se maneja externamente a través de un archivo `.env`.
 * **Dockerización:** Toda la aplicación está contenida y se ejecuta con un solo comando (`docker-compose up`), usando imágenes ligeras (`alpine`).
@@ -55,7 +55,7 @@ v v [Sqlite DB] [Servidor SFTP]
 
 ---
 
-## 🚀 Cómo Ejecutar el Proyecto
+## Cómo Ejecutar el Proyecto
 
 ### Requisitos Previos
 
