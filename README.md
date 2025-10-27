@@ -37,9 +37,9 @@ This project uses a decoupled microservices architecture orchestrated by Docker 
 (User) <--> [Frontend (Next.js)] <--> [REST API (FastAPI)] <--> [Sqlite DB]
 ```
 ## Programming Practices
-* **Environment Variables: All sensitive configuration (credentials, hosts) is managed externally via an `.env` file.
-* **Dockerization: The entire application is containerized and runs with a single command (`docker-compose up`), using lightweights (`alpine`) images.
-* **Modular Code: Each pipeline phase is an independent script and a separate Docker service, facilitating maintenance.
+* **Environment Variables:** All sensitive configuration (credentials, hosts) is managed externally via an `.env` file.
+* **Dockerization:** The entire application is containerized and runs with a single command (`docker-compose up`), using lightweights (`alpine`) images.
+* **Modular Code:** Each pipeline phase is an independent script and a separate Docker service, facilitating maintenance.
 * **Robust Error Handling:**
     * **Extractor**: Implements retries with exponential backoff for network failures.
     * **Transformer**: Separates bad data into a DLQ without halting the process.
