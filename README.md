@@ -41,7 +41,7 @@ This project uses a decoupled microservices architecture orchestrated by Docker 
 * **Dockerization: The entire application is containerized and runs with a single command (`docker-compose up`), using lightweights (`alpine`) images.
 * **Modular Code: Each pipeline phase is an independent script and a separate Docker service, facilitating maintenance.
 * **Robust Error Handling:**
-    * **EExtractor**: Implements retries with exponential backoff for network failures.
+    * **Extractor**: Implements retries with exponential backoff for network failures.
     * **Transformer**: Separates bad data into a DLQ without halting the process.
     * **Saver**: Uses separate database transactions to ensure data integrity.
 
@@ -52,7 +52,7 @@ This project uses a decoupled microservices architecture orchestrated by Docker 
 * [Docker](https://www.docker.com/)
 * [Docker Compose](https://docs.docker.com/compose/)
 
-### 1. Configuración Inicial
+### 1. Initial Setup
 
 1.  **Clone the repository:**
     *(Remember to change the URL to your own repository)*
@@ -91,10 +91,10 @@ docker-compose up --build -d
 ```
 That's it! The pipeline will now run automatically.
 
-### 3. Cómo Probar y Verificar
+### 3. How to Test and Verify
 
 1.  **Watch the pipeline logs in action:**
-    ou can "tail" the logs for each service in separate terminals.
+    You can "tail" the logs for each service in separate terminals.
     
     ```bash
     Watch the Extractor downloading
